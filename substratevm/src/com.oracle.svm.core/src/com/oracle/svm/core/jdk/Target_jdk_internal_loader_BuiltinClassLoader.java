@@ -50,6 +50,8 @@ import com.oracle.svm.shared.util.SubstrateUtil;
 @SuppressWarnings({"unused", "static-method"})
 final class Target_jdk_internal_loader_BuiltinClassLoader {
 
+    @Alias private Target_jdk_internal_loader_URLClassPath ucp;
+
     @Alias @RecomputeFieldValue(kind = Kind.Custom, declClass = NewConcurrentHashMap.class) //
     private Map<ModuleReference, ModuleReader> moduleToReader;
 
@@ -91,22 +93,57 @@ final class Target_jdk_internal_loader_BuiltinClassLoader {
         return ResourcesHelper.nameToResourceInputStream(mn, name);
     }
 
-    @Substitute
-    public URL findResource(String name) {
-        if (ClassRegistries.respectClassLoader() && this != Target_jdk_internal_loader_ClassLoaders.bootLoader()) {
-            /* Workaround for GR-73221 */
-            return null;
-        }
-        return ResourcesHelper.nameToResourceURL(name);
-    }
+    @Alias
+    @TargetElement(name = "findResource")
+    public native URL originalFindResource(String name);
 
     @Substitute
-    public Enumeration<URL> findResources(String name) {
-        if (ClassRegistries.respectClassLoader() && this != Target_jdk_internal_loader_ClassLoaders.bootLoader()) {
-            /* Workaround for GR-73221 */
-            return null;
+    public URL findResource(String name) {
+        URL imageURL = ResourcesHelper.nameToResourceURL(name);
+        if (!ClassRegistries.respectClassLoader()) {
+            // Return only image resources
+            return imageURL;
         }
-        return ResourcesHelper.nameToResourceEnumerationURLs(name);
+        if (this == Target_jdk_internal_loader_ClassLoaders.bootLoader() && imageURL != null) {
+            // Return URL of image resource for boot loader
+            return imageURL;
+        }
+        return originalFindResource(name);
+    }
+
+    @Alias
+    @TargetElement(name = "findResources")
+    public native Enumeration<URL> originalFindResources(String name) throws IOException;
+
+    @Substitute
+    public Enumeration<URL> findResources(String name) throws IOException {
+        Enumeration<URL> imageURLs = ResourcesHelper.nameToResourceEnumerationURLs(name);
+        if (!ClassRegistries.respectClassLoader()) {
+            // Return only image resources
+            return imageURLs;
+        }
+        Enumeration<URL> urls = originalFindResources(name);
+        if (this == Target_jdk_internal_loader_ClassLoaders.bootLoader()) {
+            // Image resources precede original resources
+            Enumeration<URL> head = imageURLs;
+            if (head.hasMoreElements()) {
+                if (!urls.hasMoreElements()) {
+                    return head;
+                }
+                return new Enumeration<>() {
+                    @Override
+                    public boolean hasMoreElements() {
+                        return head.hasMoreElements() || urls.hasMoreElements();
+                    }
+
+                    @Override
+                    public URL nextElement() {
+                        return head.hasMoreElements() ? head.nextElement() : urls.nextElement();
+                    }
+                };
+            }
+        }
+        return urls;
     }
 
     @Substitute
@@ -120,24 +157,6 @@ final class Target_jdk_internal_loader_BuiltinClassLoader {
         return ResourcesHelper.nameToResourceURL(module, name);
     }
 
-    @Substitute
-    private URL findResourceOnClassPath(String name) {
-        if (ClassRegistries.respectClassLoader() && this != Target_jdk_internal_loader_ClassLoaders.bootLoader()) {
-            /* Workaround for GR-73221 */
-            return null;
-        }
-        return ResourcesHelper.nameToResourceURL(name);
-    }
-
-    @Substitute
-    private Enumeration<URL> findResourcesOnClassPath(String name) {
-        if (ClassRegistries.respectClassLoader() && this != Target_jdk_internal_loader_ClassLoaders.bootLoader()) {
-            /* Workaround for GR-73221 */
-            return null;
-        }
-        return ResourcesHelper.nameToResourceEnumerationURLs(name);
-    }
-
     static final class NewConcurrentHashMap implements FieldValueTransformer {
         @Override
         public Object transform(Object receiver, Object originalValue) {
@@ -148,4 +167,13 @@ final class Target_jdk_internal_loader_BuiltinClassLoader {
 
 @TargetClass(value = jdk.internal.loader.BuiltinClassLoader.class, innerClass = "LoadedModule")
 final class Target_jdk_internal_loader_BuiltinClassLoader_LoadedModule {
+}
+
+final class BuiltinClassLoaderSupport {
+    private BuiltinClassLoaderSupport() {
+    }
+
+    static boolean isBuiltinAppLoader(Target_jdk_internal_loader_BuiltinClassLoader loader) {
+        return loader == SubstrateUtil.cast(Target_java_lang_ClassLoader.getBuiltinAppClassLoader(), Target_jdk_internal_loader_BuiltinClassLoader.class);
+    }
 }
