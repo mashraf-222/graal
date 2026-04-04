@@ -26,78 +26,44 @@ public class StringUtils {
 
     public static String escapeHTML(String s) {
         StringBuilder str = null;
-        for (int i = 0; i < s.length(); i++) {
+        int len = s.length();
+        for (int i = 0; i < len; i++) {
             char c = s.charAt(i);
-            switch (c) {
-                case '&':
-                case '<':
-                case '>':
-                case '"':
-                case '\'':
-                    if (str == null) {
-                        str = new StringBuilder();
-                        str.append(s, 0, i);
-                    }
-                    switch (c) {
-                        case '&':
-                            str.append("&amp;");
-                            break;
-                        case '<':
-                            str.append("&lt;");
-                            break;
-                        case '>':
-                            str.append("&gt;");
-                            break;
-                        case '"':
-                            str.append("&quot;");
-                            break;
-                        case '\'':
-                            str.append("&apos;");
-                            break;
-                        default:
-                            assert false;
-                    }
-                    break;
-                case '\u0000':
-                case '\u0001':
-                case '\u0002':
-                case '\u0003':
-                case '\u0004':
-                case '\u0005':
-                case '\u0006':
-                case '\u0007':
-                case '\u0008':
-                case '\u000b':
-                case '\u000c':
-                case '\u000e':
-                case '\u000f':
-                case '\u0010':
-                case '\u0011':
-                case '\u0012':
-                case '\u0013':
-                case '\u0014':
-                case '\u0015':
-                case '\u0016':
-                case '\u0017':
-                case '\u0018':
-                case '\u0019':
-                case '\u001a':
-                case '\u001b':
-                case '\u001c':
-                case '\u001d':
-                case '\u001e':
-                case '\u001f':
-                    if (str == null) {
-                        str = new StringBuilder();
-                        str.append(s, 0, i);
-                    }
-                    str.append("'0x").append(Integer.toHexString(c));
-                    break;
-                default:
-                    if (str != null) {
-                        str.append(c);
-                    }
-                    break;
+            if (c == '&' || c == '<' || c == '>' || c == '"' || c == '\'') {
+                if (str == null) {
+                    // Pre-size to avoid frequent resizing: original length plus a small slack.
+                    str = new StringBuilder(len + 8);
+                    str.append(s, 0, i);
+                }
+                switch (c) {
+                    case '&':
+                        str.append("&amp;");
+                        break;
+                    case '<':
+                        str.append("&lt;");
+                        break;
+                    case '>':
+                        str.append("&gt;");
+                        break;
+                    case '"':
+                        str.append("&quot;");
+                        break;
+                    case '\'':
+                        str.append("&apos;");
+                        break;
+                    default:
+                        assert false;
+                }
+            } else if (c <= 0x1F && c != '\t' && c != '\n' && c != '\r') {
+                if (str == null) {
+                    str = new StringBuilder(len + 8);
+                    str.append(s, 0, i);
+                }
+                str.append("'0x").append(Integer.toHexString(c));
+            } else {
+                if (str != null) {
+                    str.append(c);
+                }
             }
         }
         if (str == null) {
