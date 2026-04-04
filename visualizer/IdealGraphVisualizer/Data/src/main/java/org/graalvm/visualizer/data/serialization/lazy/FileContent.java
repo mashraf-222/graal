@@ -83,8 +83,17 @@ public class FileContent implements ReadableByteChannel, CachedContent, AutoClos
         if (eof) {
             throw new EOFException();
         }
-        openDelegate();
-        int count = ioDelegate.read(dst);
+
+        // Fast-path: avoid synchronized openDelegate() when the delegate is already open.
+        FileChannel delegate = ioDelegate;
+        if (delegate == null || !delegate.isOpen()) {
+            // Ensure delegate is opened (synchronized to avoid races).
+            openDelegate();
+            delegate = ioDelegate;
+            // openDelegate guarantees ioDelegate != null and open (or throws).
+        }
+
+        int count = delegate.read(dst);
         if (count < 0) {
             eof = true;
             return count;
