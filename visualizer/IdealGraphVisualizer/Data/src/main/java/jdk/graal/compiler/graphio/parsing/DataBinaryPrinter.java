@@ -194,7 +194,8 @@ final class DataBinaryPrinter implements
 
     @Override
     public int portSize(List<? extends Port> edges) {
-        return edges.size();
+        int s = edges.size();
+        return s;
     }
 
     @Override
