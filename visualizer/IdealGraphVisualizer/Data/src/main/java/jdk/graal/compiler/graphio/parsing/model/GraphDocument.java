@@ -171,9 +171,11 @@ public class GraphDocument extends Properties.Entity implements ChangedEventProv
     }
 
     public int getSize() {
+        int s;
         synchronized (this) {
-            return elements.size();
+            s = elements.size();
         }
+        return s;
     }
 
     @Override
