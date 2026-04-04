@@ -47,7 +47,9 @@ public class InputBytecode {
         this.length = length;
         this.code = code;
 
-        this.name = OPCODE[opcode];
+        // cache static array into local for slightly faster access in hot paths
+        String[] op = OPCODE;
+        this.name = op[opcode];
         this.operands = null;
         this.comment = null;
     }
