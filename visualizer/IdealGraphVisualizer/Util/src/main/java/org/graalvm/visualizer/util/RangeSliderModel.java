@@ -150,7 +150,38 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
     }
 
     protected synchronized final boolean getColorsDiffers(RangeSliderModel model) {
-        return !this.colors.equals(model.colors);
+        // Preserve original NPE semantics: evaluate this.colors first so that if it is null
+        // the same NPE will be thrown as before.
+        final List<Color> c1 = this.colors;
+        final List<Color> c2 = model.colors;
+
+        // identical reference (including both null) -> no difference
+        if (c1 == c2) {
+            return false;
+        }
+        // If other list is null but this isn't, original this.colors.equals(null) returned false,
+        // so we should return true (they differ).
+        if (c2 == null) {
+            return true;
+        }
+        // At this point, if c1 is null, the next call will throw NPE, matching original behavior.
+        int sz = c1.size();
+        if (sz != c2.size()) {
+            return true;
+        }
+        // Compare elements by index (avoid iterator allocation). Match List.equals semantics:
+        // elements compared with equals; handle nulls.
+        for (int i = 0; i < sz; i++) {
+            Color e1 = c1.get(i);
+            Color e2 = c2.get(i);
+            if (e1 == e2) {
+                continue;
+            }
+            if (e1 == null ? e2 != null : !e1.equals(e2)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // @GuardedBy(this)
