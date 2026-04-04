@@ -90,6 +90,8 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
 
 
     protected final PropertyChangeSupport propSupport = new PropertyChangeSupport(this);
+    private transient Map<String, Integer> lastSlots = null;
+    private transient boolean useLinearMapping = false;
 
     private RangeSliderModel() {
         this.changedEvent = new ChangedEvent<>(this);
@@ -384,12 +386,75 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
         if (slots == null) {
             return slot;
         }
-        for (Map.Entry<String, Integer> s : slots.entrySet()) {
-            if (s.getValue() == slot) {
-                return positions.indexOf(s.getKey());
+        // Rebuild cached inverse mapping if needed (either not built yet, or slots map reference changed)
+        if (indices == null || lastSlots != slots) {
+            // Reset linear mapping flag
+            useLinearMapping = false;
+            // Find min and max, also detect null values (to match original behavior which would throw NPE)
+            int max = Integer.MIN_VALUE;
+            int min = Integer.MAX_VALUE;
+            for (Integer v : slots.values()) {
+                if (v == null) {
+                    // Original implementation would attempt to unbox null and throw NPE.
+                    throw new NullPointerException();
+                }
+                if (v > max) {
+                    max = v;
+                }
+                if (v < min) {
+                    min = v;
+                }
+            }
+            if (slots.isEmpty()) {
+                indices = new int[0];
+                lastSlots = slots;
+                useLinearMapping = false;
+            } else if (min < 0) {
+                // Cannot represent negative slot indexes in array; fallback to linear search.
+                indices = null;
+                lastSlots = slots;
+                useLinearMapping = true;
+            } else {
+                int size = max + 1;
+                int[] map = new int[size < 0 ? 0 : size];
+                // initialize to -1
+                for (int i = 0; i < map.length; i++) {
+                    map[i] = -1;
+                }
+                // Fill mapping: slot -> positions.indexOf(positionName)
+                // Preserve first-encountered mapping (do not overwrite existing entries)
+                for (Map.Entry<String, Integer> e : slots.entrySet()) {
+                    int val = e.getValue();
+                    if (val >= 0 && val < map.length) {
+                        if (map[val] == -1) {
+                            int idx = positions.indexOf(e.getKey());
+                            map[val] = idx;
+                        }
+                    }
+                }
+                indices = map;
+                lastSlots = slots;
+                useLinearMapping = false;
             }
         }
-        return -1;
+        if (useLinearMapping) {
+            // Linear search preserving original behavior / order
+            for (Map.Entry<String, Integer> s : slots.entrySet()) {
+                if (s.getValue() == slot) { // auto-unbox; safe because we threw NPE on nulls
+                    return positions.indexOf(s.getKey());
+                }
+            }
+            return -1;
+        } else {
+            if (indices == null) {
+                // No mapping present
+                return -1;
+            }
+            if (slot < 0 || slot >= indices.length) {
+                return -1;
+            }
+            return indices[slot];
+        }
     }
 
     public synchronized int getSlot(int position) {
