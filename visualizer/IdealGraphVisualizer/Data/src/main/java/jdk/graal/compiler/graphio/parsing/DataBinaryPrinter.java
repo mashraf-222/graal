@@ -340,7 +340,8 @@ final class DataBinaryPrinter implements
 
     @Override
     public String locationLanguage(LocationStratum location) {
-        return location.language;
+        final String language = location.language;
+        return language;
     }
 
     @Override
