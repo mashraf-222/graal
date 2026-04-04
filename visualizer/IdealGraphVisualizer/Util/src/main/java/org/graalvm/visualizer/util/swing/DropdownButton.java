@@ -133,8 +133,12 @@ public class DropdownButton extends JPanel {
         if (toolbar) {
             JToolBar tb = new JToolBar() {
                 public void doLayout() {
-                    for (Component c : getComponents())
+                    // Use indexed access to avoid creation of an iterator / temporary array in the enhanced-for.
+                    int n = getComponentCount();
+                    for (int i = 0; i < n; i++) {
+                        Component c = getComponent(i);
                         c.setBounds(0, 0, getWidth(), getHeight());
+                    }
                 }
 
                 public void paint(Graphics g) {
@@ -155,10 +159,11 @@ public class DropdownButton extends JPanel {
         popup = new Popup();
         container.add(popup);
 
-        KeyStroke down = KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0);
-        container.getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(down, POPUP_ACTION);
+        // Reuse the shared KeyStroke instance instead of creating a new one per instance.
+        container.getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(DOWN_KEYSTROKE, POPUP_ACTION);
         container.getActionMap().put(POPUP_ACTION, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                // Keep behavior exactly the same: display the popup for this instance.
                 displayPopup();
             }
         });
@@ -305,6 +310,7 @@ public class DropdownButton extends JPanel {
     }
 
     private boolean wasIn;
+    private static final KeyStroke DOWN_KEYSTROKE = KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0);
 
     private void processChildMouseEvent(MouseEvent e) {
         boolean isIn = contains(e.getX(), e.getY());
