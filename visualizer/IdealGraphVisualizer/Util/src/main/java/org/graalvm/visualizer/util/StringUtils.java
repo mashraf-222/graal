@@ -23,81 +23,48 @@
 package org.graalvm.visualizer.util;
 
 public class StringUtils {
+    private static final String[] ASCII_REPLACEMENTS = createAsciiReplacements();
+
+
+    private static String[] createAsciiReplacements() {
+        String[] rep = new String[128];
+        // HTML escapes
+        rep['&'] = "&amp;";
+        rep['<'] = "&lt;";
+        rep['>'] = "&gt;";
+        rep['"'] = "&quot;";
+        rep['\''] = "&apos;";
+        // Control characters 0x00-0x1F except HT(0x09), LF(0x0A), CR(0x0D)
+        for (int c = 0; c <= 0x1F; c++) {
+            if (c == 0x09 || c == 0x0A || c == 0x0D) {
+                continue;
+            }
+            rep[c] = "'0x" + Integer.toHexString(c);
+        }
+        return rep;
+    }
 
     public static String escapeHTML(String s) {
         StringBuilder str = null;
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '&':
-                case '<':
-                case '>':
-                case '"':
-                case '\'':
-                    if (str == null) {
-                        str = new StringBuilder();
-                        str.append(s, 0, i);
-                    }
-                    switch (c) {
-                        case '&':
-                            str.append("&amp;");
-                            break;
-                        case '<':
-                            str.append("&lt;");
-                            break;
-                        case '>':
-                            str.append("&gt;");
-                            break;
-                        case '"':
-                            str.append("&quot;");
-                            break;
-                        case '\'':
-                            str.append("&apos;");
-                            break;
-                        default:
-                            assert false;
-                    }
-                    break;
-                case '\u0000':
-                case '\u0001':
-                case '\u0002':
-                case '\u0003':
-                case '\u0004':
-                case '\u0005':
-                case '\u0006':
-                case '\u0007':
-                case '\u0008':
-                case '\u000b':
-                case '\u000c':
-                case '\u000e':
-                case '\u000f':
-                case '\u0010':
-                case '\u0011':
-                case '\u0012':
-                case '\u0013':
-                case '\u0014':
-                case '\u0015':
-                case '\u0016':
-                case '\u0017':
-                case '\u0018':
-                case '\u0019':
-                case '\u001a':
-                case '\u001b':
-                case '\u001c':
-                case '\u001d':
-                case '\u001e':
-                case '\u001f':
-                    if (str == null) {
-                        str = new StringBuilder();
-                        str.append(s, 0, i);
-                    }
-                    str.append("'0x").append(Integer.toHexString(c));
-                    break;
-                default:
-                    if (str != null) {
-                        str.append(c);
-                    }
-                    break;
+        int len = s.length();
+        if (len == 0) {
+            return s;
+        }
+        char[] chars = s.toCharArray();
+        for (int i = 0; i < len; i++) {
+            char c = chars[i];
+            String repl = (c < ASCII_REPLACEMENTS.length) ? ASCII_REPLACEMENTS[c] : null;
+            if (repl != null) {
+                if (str == null) {
+                    // Pre-size builder to avoid further resizes: original length plus a small margin.
+                    str = new StringBuilder(len + 8);
+                    str.append(s, 0, i);
+                }
+                str.append(repl);
+            } else {
+                if (str != null) {
+                    str.append(c);
+                }
             }
         }
         if (str == null) {
