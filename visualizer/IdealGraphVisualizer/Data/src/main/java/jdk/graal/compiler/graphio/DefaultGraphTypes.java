@@ -26,6 +26,7 @@ package jdk.graal.compiler.graphio;
 
 final class DefaultGraphTypes implements GraphTypes {
     static final GraphTypes DEFAULT = new DefaultGraphTypes();
+    private static final java.util.concurrent.ConcurrentHashMap<Class<?>, String[]> ENUM_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
 
     private DefaultGraphTypes() {
     }
@@ -58,13 +59,19 @@ final class DefaultGraphTypes implements GraphTypes {
     public String[] enumTypeValues(Object clazz) {
         if (clazz instanceof Class<?>) {
             Class<? extends Enum<?>> enumClass = (Class<? extends Enum<?>>) clazz;
+            String[] cached = ENUM_CACHE.get(enumClass);
+            if (cached != null) {
+                return cached.clone();
+            }
             Enum<?>[] constants = enumClass.getEnumConstants();
             if (constants != null) {
                 String[] names = new String[constants.length];
                 for (int i = 0; i < constants.length; i++) {
                     names[i] = constants[i].name();
                 }
-                return names;
+                String[] previous = ENUM_CACHE.putIfAbsent(enumClass, names);
+                // If another thread inserted simultaneously, use that one; otherwise use ours.
+                return (previous != null ? previous : names).clone();
             }
         }
         return null;
