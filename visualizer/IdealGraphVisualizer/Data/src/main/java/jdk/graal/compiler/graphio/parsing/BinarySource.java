@@ -60,6 +60,7 @@ public class BinarySource implements DataSource {
     private boolean performDigest;
 
     private Object sourceId;
+    private static final int DEFAULT_BUFFER_SIZE = 256 * 1024;
 
     public BinarySource(Object sourceId, ReadableByteChannel channel) {
         this(channel, 0, 0, 0);
@@ -78,8 +79,9 @@ public class BinarySource implements DataSource {
     public BinarySource(ReadableByteChannel channel, int major, int minor, long offset) {
         this.majorVersion = major;
         this.minorVersion = minor;
-        buffer = ByteBuffer.allocateDirect(256 * 1024);
-        buffer.flip();
+        buffer = ByteBuffer.allocateDirect(DEFAULT_BUFFER_SIZE);
+        // Initialize as empty buffer; use limit(0) which is marginally cheaper than flip()
+        buffer.limit(0);
         this.channel = channel;
         this.bufferOffset = baseOffset = offset;
         try {
