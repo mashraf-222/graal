@@ -133,8 +133,12 @@ public class DropdownButton extends JPanel {
         if (toolbar) {
             JToolBar tb = new JToolBar() {
                 public void doLayout() {
-                    for (Component c : getComponents())
+                    // Use index-based access to avoid creating a temporary array from getComponents()
+                    int n = getComponentCount();
+                    for (int i = 0; i < n; i++) {
+                        Component c = getComponent(i);
                         c.setBounds(0, 0, getWidth(), getHeight());
+                    }
                 }
 
                 public void paint(Graphics g) {
@@ -156,7 +160,8 @@ public class DropdownButton extends JPanel {
         container.add(popup);
 
         KeyStroke down = KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0);
-        container.getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT).put(down, POPUP_ACTION);
+        javax.swing.InputMap inputMap = container.getInputMap(WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        inputMap.put(down, POPUP_ACTION);
         container.getActionMap().put(POPUP_ACTION, new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 displayPopup();
