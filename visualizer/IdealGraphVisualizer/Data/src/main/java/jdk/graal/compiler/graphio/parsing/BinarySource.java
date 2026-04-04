@@ -240,7 +240,68 @@ public class BinarySource implements DataSource {
 
     @Override
     public byte[] readBytes(int len) throws IOException {
-        return readBytes(new byte[len], len);
+        // Preserve original behavior of throwing NegativeArraySizeException for negative len:
+        byte[] dst = new byte[len];
+        if (len == 0) {
+            return dst;
+        }
+
+        int pos = 0;
+        int remaining = len;
+        final ByteBuffer internal = this.buffer;
+        final ReadableByteChannel ch = this.channel;
+        final int capacity = internal.capacity();
+
+        while (remaining > 0) {
+            if (!internal.hasRemaining()) {
+                // We've consumed the previous buffer content entirely; advance bufferOffset by the
+                // number of bytes that were in the buffer previously.
+                int prevLimit = internal.limit();
+                // Prepare buffer for fill (position = 0, limit = capacity)
+                internal.clear();
+
+                // If request is very large, read directly into destination to avoid double copy.
+                if (remaining >= capacity) {
+                    // Read directly into dst[pos .. pos+remaining)
+                    ByteBuffer wrap = ByteBuffer.wrap(dst, pos, remaining);
+                    int totalRead = 0;
+                    while (wrap.hasRemaining()) {
+                        int r = ch.read(wrap);
+                        if (r < 0) {
+                            throw new EOFException();
+                        }
+                        totalRead += r;
+                    }
+                    pos += totalRead;
+                    remaining -= totalRead;
+                    // We consumed previous buffer content (prevLimit) plus the direct-read bytes.
+                    bufferOffset += prevLimit + totalRead;
+                    // Buffer remains empty (position == 0, limit == capacity possibly), so continue loop.
+                    continue;
+                }
+
+                // Fill internal buffer
+                int r = ch.read(internal);
+                if (r < 0) {
+                    throw new EOFException();
+                }
+                internal.flip();
+                // We consumed previous buffer content entirely; the new buffer's start corresponds to
+                // previous start + prevLimit.
+                bufferOffset += prevLimit;
+                // Continue loop to copy from internal buffer.
+                continue;
+            }
+
+            // Copy from internal buffer to dst
+            int toCopy = Math.min(internal.remaining(), remaining);
+            internal.get(dst, pos, toCopy);
+            pos += toCopy;
+            remaining -= toCopy;
+        }
+
+        lastPosition += len;
+        return dst;
     }
 
     @Override
