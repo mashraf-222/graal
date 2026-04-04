@@ -231,11 +231,42 @@ public class BinarySource implements DataSource {
 
     @Override
     public byte[] readBytes() throws IOException {
-        int len = readInt();
+        // Inline reading the length to avoid the extra method call overhead in the hot path.
+        int len;
+        if (buffer.remaining() >= 4) {
+            len = buffer.getInt();
+        } else {
+            ensureAvailable(4);
+            len = buffer.getInt();
+        }
         if (len < 0) {
             return null;
         }
-        return readBytes(len);
+        if (len == 0) {
+            return new byte[0];
+        }
+
+        byte[] result = new byte[len];
+        int offset = 0;
+
+        // Fast path: if entire requested bytes are available in the buffer, copy once.
+        int rem = buffer.remaining();
+        if (rem >= len) {
+            buffer.get(result);
+            return result;
+        }
+
+        // Otherwise, fill across buffer refills.
+        while (offset < len) {
+            if (!buffer.hasRemaining()) {
+                // Request at least one byte so ensureAvailable can refill the buffer.
+                ensureAvailable(1);
+            }
+            int toCopy = Math.min(buffer.remaining(), len - offset);
+            buffer.get(result, offset, toCopy);
+            offset += toCopy;
+        }
+        return result;
     }
 
     @Override
