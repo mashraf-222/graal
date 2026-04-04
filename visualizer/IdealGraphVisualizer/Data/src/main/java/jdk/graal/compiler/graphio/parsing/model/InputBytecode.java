@@ -89,6 +89,14 @@ public class InputBytecode {
         return operands;
     }
 
+    private static int opcodeAfterBytes(int opcode) {
+        return OPCODE_AFTER_BYTES[opcode];
+    }
+
+    private static int opcodeAfterSize(int opcode) {
+        return OPCODE_AFTER_SIZE[opcode];
+    }
+
     public String getComment() {
         return comment;
     }
