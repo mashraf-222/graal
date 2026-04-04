@@ -146,7 +146,8 @@ public class FileContent implements ReadableByteChannel, CachedContent, AutoClos
 
             @Override
             public int read(ByteBuffer dst) throws IOException {
-                if (mbb.remaining() == 0) {
+                int rem = mbb.remaining();
+                if (rem == 0) {
                     eof = true;
                     return -1;
                 } else if (eof) {
@@ -154,16 +155,19 @@ public class FileContent implements ReadableByteChannel, CachedContent, AutoClos
                 } else if (closed) {
                     throw new ClosedChannelException();
                 }
-                if (dst.remaining() < mbb.remaining()) {
+                int dstRem = dst.remaining();
+                if (dstRem < rem) {
+                    // copy only what fits into dst using a duplicate view
                     ByteBuffer b = mbb.duplicate();
-                    int count = dst.remaining();
+                    int count = dstRem;
                     int pos = mbb.position() + count;
                     b.limit(pos);
                     dst.put(b);
                     mbb.position(pos);
                     return count;
                 } else {
-                    int count = mbb.remaining();
+                    // dst can accommodate all remaining bytes
+                    int count = rem;
                     dst.put(mbb);
                     return count;
                 }
