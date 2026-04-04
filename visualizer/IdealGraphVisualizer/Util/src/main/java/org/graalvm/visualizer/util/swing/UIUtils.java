@@ -215,11 +215,14 @@ public final class UIUtils {
     // Returns next enabled tab of JTabbedPane
     public static int getNextSubTabIndex(JTabbedPane tabs, int tabIndex) {
         int nextTabIndex = tabIndex;
+        int count = tabs.getComponentCount();
+        if (count == 0) {
+            return nextTabIndex;
+        }
 
-        for (int i = 0; i < tabs.getComponentCount(); i++) {
+        for (int i = 0; i < count; i++) {
             nextTabIndex++;
-
-            if (nextTabIndex == tabs.getComponentCount()) {
+            if (nextTabIndex == count) {
                 nextTabIndex = 0;
             }
 
