@@ -242,16 +242,18 @@ public final class UIUtils {
     // Returns previous enabled tab of JTabbedPane
     public static int getPreviousSubTabIndex(JTabbedPane tabs, int tabIndex) {
         int previousTabIndex = tabIndex;
+        // Cache component count and return early when enabled tab found to avoid extra iterations.
+        int count = tabs.getComponentCount();
 
-        for (int i = 0; i < tabs.getComponentCount(); i++) {
+        for (int i = 0; i < count; i++) {
             previousTabIndex--;
 
             if (previousTabIndex < 0) {
-                previousTabIndex = tabs.getComponentCount() - 1;
+                previousTabIndex = count - 1;
             }
 
             if (tabs.isEnabledAt(previousTabIndex)) {
-                break;
+                return previousTabIndex;
             }
         }
 
