@@ -142,7 +142,12 @@ public class RangeSliderModel implements ChangedEventProvider<RangeSliderModel> 
     }
 
     protected synchronized final boolean getPositionsDiffers(RangeSliderModel model) {
-        return getPositionsDiffers(model.firstPosition, model.secondPosition) || !positions.equals(model.positions);
+        if (getPositionsDiffers(model.firstPosition, model.secondPosition)) {
+            return true;
+        }
+        List<String> otherPositions = model.positions;
+        List<String> myPositions = this.positions;
+        return myPositions != otherPositions && !myPositions.equals(otherPositions);
     }
 
     private boolean getPositionsDiffers(int firstPosition, int secondPosition) {
