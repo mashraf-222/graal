@@ -577,9 +577,11 @@ public final class UIUtils {
 
     public static boolean hasOnlyLeafs(JTree tree, Object node) {
         TreeModel model = tree.getModel();
+        int childCount = model.getChildCount(node);
 
-        for (int i = 0; i < model.getChildCount(node); i++) {
-            if (!model.isLeaf(model.getChild(node, i))) {
+        for (int i = 0; i < childCount; i++) {
+            Object child = model.getChild(node, i);
+            if (!model.isLeaf(child)) {
                 return false;
             }
         }
