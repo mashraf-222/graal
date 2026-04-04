@@ -96,11 +96,22 @@ public class InputEdge {
         this.label = label;
         this.type = type;
 
-        int hash = Objects.hash(from, to, fromIndex, toIndex, listIndex);
+        // Reproduce Objects.hash(from, to, fromIndex, toIndex, listIndex)
+        int h = 1;
+        h = 31 * h + from;
+        h = 31 * h + to;
+        h = 31 * h + (int) fromIndex;
+        h = 31 * h + (int) toIndex;
+        h = 31 * h + listIndex;
         if (state == State.IMMUTABLE) {
-            hash = Objects.hash(hash, label);
+            // Reproduce Objects.hash(hash, label)
+            int h2 = 1;
+            h2 = 31 * h2 + h;
+            h2 = 31 * h2 + (label == null ? 0 : label.hashCode());
+            this.hashCode = h2;
+        } else {
+            this.hashCode = h;
         }
-        this.hashCode = hash;
     }
 
     public State getState() {
