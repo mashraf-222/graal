@@ -37,6 +37,7 @@ public final class InputBlock {
     private final String name;
     private final InputGraph graph;
     private final Set<InputBlock> successors;
+    private final String toStringCache;
 
     @Override
     public int hashCode() {
@@ -79,6 +80,9 @@ public final class InputBlock {
         this.name = name;
         nodes = new ArrayList<>();
         successors = new LinkedHashSet<>(2);
+        // Cache the toString value since name is final and toString is often called;
+        // this avoids repeated concatenation allocations.
+        toStringCache = "Block " + this.name;
     }
 
     public String getName() {
@@ -105,7 +109,7 @@ public final class InputBlock {
 
     @Override
     public String toString() {
-        return "Block " + this.getName();
+        return toStringCache;
     }
 
     void addSuccessor(InputBlock b) {
