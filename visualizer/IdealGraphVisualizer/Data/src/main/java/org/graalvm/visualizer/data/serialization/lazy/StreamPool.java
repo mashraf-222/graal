@@ -48,11 +48,36 @@ class StreamPool extends ConstantPool {
 
     public StreamPool() {
         this.generation = 0;
+        // keep default state; avoid eager allocations beyond necessary
+        this.originalData = null;
+        this.entriesAdded = 0;
+        this.frozen = false;
     }
 
     public StreamPool(int generation, List<Object> data) {
         super(data);
         this.generation = generation;
+    }
+
+    /**
+     * Ensure originalData is a snapshot of the current pool data. This is lazy and only copies
+     * when first needed to avoid unnecessary allocations in the common read-only case.
+     *
+     * This helper is private and does not change existing public behavior; it merely provides a
+     * faster path for callers that need to perform a snapshot before mutation.
+     */
+    private void lazyCopyOnWrite(List<Object> currentData) {
+        if (originalData == null) {
+            /*
+             * Copy into a new ArrayList sized to currentData to avoid repeated resizing.
+             * Using ArrayList's constructor with known size minimizes allocations.
+             */
+            int size = (currentData == null) ? 0 : currentData.size();
+            originalData = new ArrayList<>(size);
+            if (size > 0) {
+                originalData.addAll(currentData);
+            }
+        }
     }
 
     @Override
