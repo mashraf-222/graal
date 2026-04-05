@@ -43,9 +43,47 @@ public final class LocationStratum {
     }
 
     LocationStratum(String uri, String file, String language, int line, int startOffset, int endOffset) {
-        this.uri = intern(uri);
-        this.file = intern(file);
-        this.language = intern(language);
+        // Intern each distinct string value at most once and reuse interned references when possible.
+        String iu;
+        String ifile;
+        String ilang;
+
+        // Handle uri and file first, reusing when they are the same reference or equal content.
+        if (uri == file) {
+            iu = ifile = intern(uri);
+        } else {
+            iu = intern(uri);
+            if (file == null) {
+                ifile = null;
+            } else if (file.equals(uri)) {
+                // content-equal to uri: reuse iu (which may be null if uri was null)
+                ifile = iu;
+            } else {
+                ifile = intern(file);
+            }
+        }
+
+        // Handle language, attempting to reuse iu or ifile when possible.
+        if (language == uri) {
+            ilang = iu;
+        } else if (language == file) {
+            ilang = ifile;
+        } else if (language == null) {
+            ilang = null;
+        } else {
+            // language is non-null and not the same reference as uri/file
+            if (uri != null && language.equals(uri)) {
+                ilang = iu;
+            } else if (file != null && language.equals(file)) {
+                ilang = ifile;
+            } else {
+                ilang = intern(language);
+            }
+        }
+
+        this.uri = iu;
+        this.file = ifile;
+        this.language = ilang;
         this.line = line;
         this.startOffset = startOffset;
         this.endOffset = endOffset;
