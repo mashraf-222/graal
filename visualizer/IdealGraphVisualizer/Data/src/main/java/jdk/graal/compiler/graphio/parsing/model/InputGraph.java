@@ -219,14 +219,23 @@ public class InputGraph extends AbstractMutableDocumentItem<InputGraph> implemen
     }
 
     public List<InputNode> findRootNodes() {
-        List<InputNode> result = new ArrayList<>();
-        Set<Integer> nonRoot = new LinkedHashSet<>();
+        List<InputNode> result;
+        Set<Integer> nonRoot;
         GraphData d = data();
+
+        // Pre-size the set to avoid rehashing during adds.
+        int edgesSize = d.edges.size();
+        nonRoot = new java.util.HashSet<>(Math.max(16, (int) (edgesSize / 0.75f) + 1));
         for (InputEdge curEdges : d.edges) {
             nonRoot.add(curEdges.getTo());
         }
 
-        for (InputNode node : d.getNodes()) {
+        Collection<InputNode> nodes = d.getNodes();
+        // Pre-size the result list to avoid incremental resizing.
+        int expected = Math.max(0, nodes.size() - nonRoot.size());
+        result = new ArrayList<>(expected);
+
+        for (InputNode node : nodes) {
             if (!nonRoot.contains(node.getId())) {
                 result.add(node);
             }
