@@ -139,11 +139,7 @@ public class InputGraph extends AbstractMutableDocumentItem<InputGraph> implemen
     @SuppressWarnings("this-escape")
     public InputGraph(Object id, int dumpId, String format, Object[] args) {
         super(Properties.newProperties(PROPNAME_NAME, ModelBuilder.makeGraphName(dumpId, format, args)));
-        if (id == null) {
-            this.id = Group.uniqueIDGenerator.getAndIncrement();
-        } else {
-            this.id = id;
-        }
+        this.id = (id == null) ? Group.uniqueIDGenerator.getAndIncrement() : id;
         this.dumpId = dumpId;
         this.format = format;
         this.args = args;
