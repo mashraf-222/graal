@@ -130,7 +130,10 @@ public final class StreamSource implements DataSource {
 
     @Override
     public byte[] readBytes(int len) throws IOException {
-        return readBytes(new byte[len], len);
+        // Allocate the array once and fill it directly to avoid extra copies or delegations.
+        byte[] result = new byte[len];
+        in.readFully(result);
+        return result;
     }
 
     @Override
