@@ -95,8 +95,39 @@ public final class StreamSource implements DataSource {
             return null;
         }
         double[] props = new double[len];
-        for (int i = 0; i < len; i++) {
-            props[i] = in.readDouble();
+        if (len == 0) {
+            return props;
+        }
+
+        // Total bytes to read for all doubles
+        int totalBytes = len * 8;
+
+        // Use a fixed-size buffer that is a multiple of 8 to avoid per-double read overhead
+        final int PREFERRED_BUFFER = 8192; // bytes, chosen to be reasonably small and efficient
+        final int bufSize = (PREFERRED_BUFFER / 8) * 8;
+        final byte[] buffer = new byte[Math.min(totalBytes, bufSize)];
+
+        int dstIndex = 0;
+        int bytesRemaining = totalBytes;
+        while (bytesRemaining > 0) {
+            int toRead = Math.min(bytesRemaining, buffer.length);
+            // toRead will always be a multiple of 8 because both bytesRemaining and buffer.length are multiples of 8
+            in.readFully(buffer, 0, toRead);
+
+            int pos = 0;
+            int elems = toRead / 8;
+            for (int i = 0; i < elems; i++) {
+                long l = ((buffer[pos++] & 0xFFL) << 56) |
+                         ((buffer[pos++] & 0xFFL) << 48) |
+                         ((buffer[pos++] & 0xFFL) << 40) |
+                         ((buffer[pos++] & 0xFFL) << 32) |
+                         ((buffer[pos++] & 0xFFL) << 24) |
+                         ((buffer[pos++] & 0xFFL) << 16) |
+                         ((buffer[pos++] & 0xFFL) << 8) |
+                         ((buffer[pos++] & 0xFFL));
+                props[dstIndex++] = Double.longBitsToDouble(l);
+            }
+            bytesRemaining -= toRead;
         }
         return props;
     }
