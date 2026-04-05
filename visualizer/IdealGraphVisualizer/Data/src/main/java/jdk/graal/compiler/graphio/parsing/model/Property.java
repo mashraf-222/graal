@@ -30,6 +30,7 @@ import java.util.Objects;
 public class Property<T> {
     private final String name;
     private final T value;
+    private transient volatile String toStringCache;
 
     public Property(String name, T value) {
         if (name == null) {
@@ -50,7 +51,17 @@ public class Property<T> {
 
     @Override
     public String toString() {
-        return toString(name, value);
+        String s = toStringCache;
+        if (s == null) {
+            synchronized (this) {
+                s = toStringCache;
+                if (s == null) {
+                    s = toString(name, value);
+                    toStringCache = s;
+                }
+            }
+        }
+        return s;
     }
 
     public static <T> String toString(String name, T value) {
