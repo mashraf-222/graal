@@ -30,14 +30,15 @@ import java.util.Objects;
 public class Property<T> {
     private final String name;
     private final T value;
+    private static final String PROPERTY_NAME_MUST_NOT_BE_NULL = "Property name must not be null!";
 
     public Property(String name, T value) {
-        if (name == null) {
-            throw new IllegalArgumentException("Property name must not be null!");
+        if (name != null) {
+            this.name = name;
+            this.value = value;
+        } else {
+            throw new IllegalArgumentException(PROPERTY_NAME_MUST_NOT_BE_NULL);
         }
-
-        this.name = name;
-        this.value = value;
     }
 
     public String getName() {
