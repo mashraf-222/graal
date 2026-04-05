@@ -162,6 +162,13 @@ public class ConstantPool {
      * @return pool entries
      */
     public synchronized List<Object> copyData() {
+        // When the backing storage is an ArrayList, use its clone() which uses a single
+        // System.arraycopy on the internal array; this is faster than addAll/iteration.
+        if (data instanceof ArrayList) {
+            @SuppressWarnings("unchecked")
+            List<Object> cloned = (List<Object>) ((ArrayList<?>) data).clone();
+            return cloned;
+        }
         return new ArrayList<>(data);
     }
 }
