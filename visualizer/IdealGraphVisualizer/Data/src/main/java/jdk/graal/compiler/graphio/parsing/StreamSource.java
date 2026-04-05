@@ -40,6 +40,7 @@ public final class StreamSource implements DataSource {
     private final DataInputStream in;
     private int majorVersion;
     private int minorVersion;
+    private final byte[] magicBuf = new byte[MAGIC_BYTES.length];
 
     public StreamSource(InputStream is) {
         this.in = new DataInputStream(is);
@@ -77,15 +78,19 @@ public final class StreamSource implements DataSource {
 
     @Override
     public boolean readHeader() throws IOException {
-        in.mark(MAGIC_BYTES.length);
-        byte[] magic = readBytes(MAGIC_BYTES.length);
-        if (Arrays.equals(MAGIC_BYTES, magic)) {
-            setVersion(readByte(), readByte());
-            return true;
-        } else {
-            in.reset();
-            return false;
+        int len = MAGIC_BYTES.length;
+        in.mark(len);
+        // Read exactly len bytes into reusable buffer. readFully throws EOFException if not enough bytes.
+        in.readFully(magicBuf, 0, len);
+        // Compare without allocating a new array or calling Arrays.equals to reduce overhead.
+        for (int i = 0; i < len; i++) {
+            if (magicBuf[i] != MAGIC_BYTES[i]) {
+                in.reset();
+                return false;
+            }
         }
+        setVersion(readByte(), readByte());
+        return true;
     }
 
     @Override
