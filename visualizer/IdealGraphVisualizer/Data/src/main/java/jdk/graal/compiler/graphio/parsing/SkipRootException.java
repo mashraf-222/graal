@@ -35,6 +35,7 @@ public class SkipRootException extends RuntimeException {
     private final long start;
     private final long end;
     private final ConstantPool readFromPool;
+    private static final long serialVersionUID = 1L;
 
     public SkipRootException(long start, long end, ConstantPool pool) {
         this.start = start;
@@ -58,4 +59,14 @@ public class SkipRootException extends RuntimeException {
     public String toString() {
         return "Skip[from " + start + " to " + end + ", pool=" + Integer.toHexString(readFromPool == null ? 0 : System.identityHashCode(readFromPool));
     }
+
+    /**
+     * Avoid filling in the stack trace since this exception is used for control-flow/fast-path skipping.
+     * This significantly reduces allocation and CPU overhead when the exception is thrown frequently.
+     */
+    @Override
+    public synchronized Throwable fillInStackTrace() {
+        return this;
+    }
+
 }
