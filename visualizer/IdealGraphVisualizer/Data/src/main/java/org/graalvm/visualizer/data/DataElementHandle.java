@@ -56,6 +56,7 @@ public class DataElementHandle {
      * Path of element IDs, starting from the document's direct children.
      */
     private final List<Object> path;
+    private transient int cachedHash;
 
     DataElementHandle(GraphDocument document, List<Object> path) {
         this.document = document;
@@ -68,17 +69,27 @@ public class DataElementHandle {
         ll.add(fe.getID());
         for (Folder ff = fe.getParent(); ff != null && ff != document; ) {
             FolderElement fc = ff;
-            ll.add(0, fc.getID());
+            ll.add(fc.getID());
             ff = fc.getParent();
         }
+        // reverse once instead of repeatedly inserting at index 0
+        java.util.Collections.reverse(ll);
         this.path = ll;
     }
 
     @Override
     public int hashCode() {
+        int h = cachedHash;
+        if (h != 0) {
+            return h;
+        }
         int hash = 7;
-        hash = 79 * hash + Objects.hashCode(this.document);
-        hash = 79 * hash + Objects.hashCode(this.path);
+        hash = 79 * hash + (document == null ? 0 : document.hashCode());
+        hash = 79 * hash + (path == null ? 0 : path.hashCode());
+        // only cache non-zero hash to avoid ambiguity with the default cached value (0)
+        if (hash != 0) {
+            cachedHash = hash;
+        }
         return hash;
     }
 
