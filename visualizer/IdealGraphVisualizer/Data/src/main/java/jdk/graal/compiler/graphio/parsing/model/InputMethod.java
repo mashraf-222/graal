@@ -62,13 +62,81 @@ public class InputMethod extends Properties.Entity {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || (!(o instanceof InputMethod))) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof InputMethod)) {
             return false;
         }
 
         final InputMethod im = (InputMethod) o;
-        return Objects.equals(name, im.name) && bci == im.bci && Objects.equals(shortName, im.shortName) && Objects.equals(inlined, im.inlined) && Objects.equals(bytecodes, im.bytecodes) &&
-                        Objects.equals(method, im.method);
+
+        // compare cheap/primitives first
+        if (bci != im.bci) {
+            return false;
+        }
+
+        // compare strings with reference check first to avoid equals call
+        if (name != im.name) {
+            if (name == null || !name.equals(im.name)) {
+                return false;
+            }
+        }
+
+        if (shortName != im.shortName) {
+            if (shortName == null || !shortName.equals(im.shortName)) {
+                return false;
+            }
+        }
+
+        // compare method with reference check first
+        if (method != im.method) {
+            if (method == null || !method.equals(im.method)) {
+                return false;
+            }
+        }
+
+        // compare inlined lists: reference equality, then size, then element-wise
+        if (inlined != im.inlined) {
+            if (inlined == null || im.inlined == null) {
+                return false;
+            }
+            int sz = inlined.size();
+            if (sz != im.inlined.size()) {
+                return false;
+            }
+            for (int i = 0; i < sz; i++) {
+                InputMethod a = inlined.get(i);
+                InputMethod b = im.inlined.get(i);
+                if (a != b) {
+                    if (a == null || !a.equals(b)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        // compare bytecodes lists similarly
+        if (bytecodes != im.bytecodes) {
+            if (bytecodes == null || im.bytecodes == null) {
+                return false;
+            }
+            int szb = bytecodes.size();
+            if (szb != im.bytecodes.size()) {
+                return false;
+            }
+            for (int i = 0; i < szb; i++) {
+                InputBytecode a = bytecodes.get(i);
+                InputBytecode b = im.bytecodes.get(i);
+                if (a != b) {
+                    if (a == null || !a.equals(b)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     public InputMethod(Group parent, String name, String shortName, int bci, Method method) {
