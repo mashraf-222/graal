@@ -53,21 +53,14 @@ public class Pair<L, R> {
 
     @Override
     public boolean equals(Object o) {
-        if (o == null || !(o instanceof Pair)) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Pair)) {
             return false;
         }
         Pair<?, ?> obj = (Pair<?, ?>) o;
-        boolean b1 = (l == obj.l);
-        if (l != null) {
-            b1 = l.equals(obj.l);
-        }
-
-        boolean b2 = (r == obj.r);
-        if (r != null) {
-            b2 = r.equals(obj.r);
-        }
-
-        return b1 && b2;
+        return java.util.Objects.equals(l, obj.l) && java.util.Objects.equals(r, obj.r);
     }
 
     @Override
