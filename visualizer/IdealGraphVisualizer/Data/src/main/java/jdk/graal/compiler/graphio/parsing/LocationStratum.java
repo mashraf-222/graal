@@ -98,22 +98,64 @@ public final class LocationStratum {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        // Cache fields locally to avoid repeated field access
+        final String language = this.language;
+        final String uri = this.uri;
+        final String file = this.file;
+        final int line = this.line;
+        final int startOffset = this.startOffset;
+        final int endOffset = this.endOffset;
+
+        final boolean hasStart = startOffset > -1;
+        final boolean hasEnd = endOffset > -1;
+
+        // Estimate capacity to avoid StringBuilder reallocation
+        int estimated = 0;
+        estimated += (language != null ? language.length() : 4) + 1; // language + '/'
+        String main = uri != null ? uri : file;
+        estimated += (main != null ? main.length() : 4) + 1; // uri/file + ':'
+        estimated += digitLength(line);
+        if (hasStart || hasEnd) {
+            estimated += 2; // '(' and ')'
+            estimated += hasStart ? digitLength(startOffset) : 0;
+            estimated += 1; // '-'
+            estimated += hasEnd ? digitLength(endOffset) : 0;
+        }
+
+        StringBuilder sb = new StringBuilder(Math.max(estimated, 16));
         sb.append(language).append("/");
-        sb.append(uri != null ? uri : file);
+        sb.append(main);
         sb.append(":").append(line);
-        if (startOffset > -1 || endOffset > -1) {
+        if (hasStart || hasEnd) {
             sb.append("(");
-            if (startOffset > -1) {
+            if (hasStart) {
                 sb.append(startOffset);
             }
             sb.append("-");
-            if (endOffset > -1) {
+            if (hasEnd) {
                 sb.append(endOffset);
             }
             sb.append(")");
         }
         return sb.toString();
+    }
+
+
+    private static int digitLength(int v) {
+        long lv = v;
+        if (lv == 0L) {
+            return 1;
+        }
+        int digits = 0;
+        if (lv < 0L) {
+            digits++; // for the '-'
+            lv = -lv;
+        }
+        while (lv > 0L) {
+            digits++;
+            lv /= 10L;
+        }
+        return digits;
     }
 
 }
