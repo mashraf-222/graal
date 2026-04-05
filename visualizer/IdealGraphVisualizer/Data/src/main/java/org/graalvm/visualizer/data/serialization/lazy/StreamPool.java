@@ -62,7 +62,9 @@ class StreamPool extends ConstantPool {
 
     @Override
     public Object get(int index, long where) {
-        itemRead.set(index);
+        // Cache field locally to avoid repeated field dereferences on hot path.
+        final BitSet bs = itemRead;
+        bs.set(index);
         Object res = super.get(index, where);
         if (res == null) {
             throw new IllegalStateException("Pool inconsistency");
