@@ -77,6 +77,12 @@ public class Pair<L, R> {
 
     @Override
     public String toString() {
-        return "[" + l + "/" + r + "]";
+        StringBuilder sb = new StringBuilder(32);
+        sb.append('[');
+        sb.append(String.valueOf(l));
+        sb.append('/');
+        sb.append(String.valueOf(r));
+        sb.append(']');
+        return sb.toString();
     }
 }
