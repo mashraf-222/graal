@@ -37,10 +37,11 @@ public final class InputBlock {
     private final String name;
     private final InputGraph graph;
     private final Set<InputBlock> successors;
+    private final int cachedHash;
 
     @Override
     public int hashCode() {
-        return name.hashCode();
+        return cachedHash;
     }
 
     @Override
@@ -77,8 +78,10 @@ public final class InputBlock {
     InputBlock(InputGraph graph, String name) {
         this.graph = graph;
         this.name = name;
-        nodes = new ArrayList<>();
+        // small initial capacity to avoid immediate resizes for typical small blocks
+        nodes = new ArrayList<>(4);
         successors = new LinkedHashSet<>(2);
+        this.cachedHash = name.hashCode();
     }
 
     public String getName() {
