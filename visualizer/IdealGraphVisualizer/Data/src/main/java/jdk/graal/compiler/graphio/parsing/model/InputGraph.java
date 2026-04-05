@@ -76,7 +76,7 @@ public class InputGraph extends AbstractMutableDocumentItem<InputGraph> implemen
         return frozen;
     }
 
-    public String getGraphType() {
+    public final String getGraphType() {
         return graphType;
     }
 
@@ -139,11 +139,9 @@ public class InputGraph extends AbstractMutableDocumentItem<InputGraph> implemen
     @SuppressWarnings("this-escape")
     public InputGraph(Object id, int dumpId, String format, Object[] args) {
         super(Properties.newProperties(PROPNAME_NAME, ModelBuilder.makeGraphName(dumpId, format, args)));
-        if (id == null) {
-            this.id = Group.uniqueIDGenerator.getAndIncrement();
-        } else {
-            this.id = id;
-        }
+        // Use local variables to minimize repeated field access in the constructor hot path.
+        final Object resolvedId = (id == null) ? Group.uniqueIDGenerator.getAndIncrement() : id;
+        this.id = resolvedId;
         this.dumpId = dumpId;
         this.format = format;
         this.args = args;
