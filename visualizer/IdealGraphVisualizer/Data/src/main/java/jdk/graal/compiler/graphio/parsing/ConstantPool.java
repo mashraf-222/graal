@@ -85,7 +85,16 @@ public class ConstantPool {
      * @return copy of storage
      */
     protected final List<Object> snapshot() {
-        return new ArrayList<>(data);
+        List<Object> local = this.data;
+        // Fast-path for ArrayList to leverage its internal copy constructor (uses System.arraycopy).
+        if (local instanceof ArrayList) {
+            return new ArrayList<>((ArrayList<Object>) local);
+        }
+        // For other List implementations, pre-size the ArrayList to avoid incremental resizing.
+        int size = local.size();
+        ArrayList<Object> copy = new ArrayList<>(size);
+        copy.addAll(local);
+        return copy;
     }
 
     /**
