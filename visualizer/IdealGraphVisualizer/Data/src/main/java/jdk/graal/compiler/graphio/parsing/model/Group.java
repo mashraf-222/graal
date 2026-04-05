@@ -51,6 +51,7 @@ public class Group extends AbstractMutableDocumentItem<Group> implements
     private Folder parent;
 
     static final AtomicLong uniqueIDGenerator = new AtomicLong(1);
+    private static final Class<String> STRING_CLASS = String.class;
 
     public Group(Folder parent) {
         this(parent, null);
@@ -216,7 +217,7 @@ public class Group extends AbstractMutableDocumentItem<Group> implements
 
     @Override
     public String getName() {
-        return getProperties().get(PROPNAME_NAME, String.class);
+        return (String) getProperties().get(PROPNAME_NAME, STRING_CLASS);
     }
 
     @Override
