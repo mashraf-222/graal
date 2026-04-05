@@ -134,13 +134,23 @@ public final class LocationStackFrame {
             return false;
         }
         final LocationStackFrame other = (LocationStackFrame) obj;
-        if (!Objects.equals(this.method, other.method)) {
-            return false;
+        // Inline and short-circuit reference checks to avoid extra method-call overhead
+        if (this.method != other.method) {
+            if (this.method == null || !this.method.equals(other.method)) {
+                return false;
+            }
         }
-        if (!Objects.equals(this.parent, other.parent)) {
-            return false;
+        if (this.parent != other.parent) {
+            if (this.parent == null || !this.parent.equals(other.parent)) {
+                return false;
+            }
         }
-        return Objects.equals(this.strata, other.strata);
+        if (this.strata != other.strata) {
+            if (this.strata == null || !this.strata.equals(other.strata)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public List<LocationStratum> getStrata() {
