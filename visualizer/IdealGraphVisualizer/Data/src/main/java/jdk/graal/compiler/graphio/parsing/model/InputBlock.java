@@ -60,7 +60,15 @@ public final class InputBlock {
             return false;
         }
 
-        final Set<String> s = new LinkedHashSet<>();
+        if (b.successors == successors) {
+            return true;
+        }
+
+        // Pre-size the HashSet to avoid rehashing (capacity ≈ expectedSize / loadFactor + 1)
+        int expected = successors.size();
+        int capacity = (int) (expected / 0.75f) + 1;
+        Set<String> s = new java.util.HashSet<>(capacity);
+
         for (InputBlock succ : successors) {
             s.add(succ.name);
         }
