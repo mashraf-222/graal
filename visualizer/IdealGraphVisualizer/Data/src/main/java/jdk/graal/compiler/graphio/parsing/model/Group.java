@@ -60,13 +60,11 @@ public class Group extends AbstractMutableDocumentItem<Group> implements
     public Group(Folder parent, Object id) {
         // Ensure that name and type are never null
         super(Properties.newProperties(PROPNAME_NAME, "", PROPNAME_TYPE, ""));
-        if (id == null) {
-            this.id = uniqueIDGenerator.getAndIncrement();
-        } else {
-            this.id = id;
-        }
-        elements = new ArrayList<>();
-        graphs = new ArrayList<>();
+        // Assign id in a single step to minimize unnecessary writes/autoboxing paths
+        this.id = (id == null) ? Long.valueOf(uniqueIDGenerator.getAndIncrement()) : id;
+        // Pre-size small lists to avoid early resizes (typical groups are small)
+        elements = new ArrayList<>(4);
+        graphs = new ArrayList<>(4);
         this.parent = parent;
         this.changedEvent = new ChangedEvent<>(this);
         this.propertyChangedEvent = new ChangedEvent<>(this);
