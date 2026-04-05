@@ -72,11 +72,72 @@ public class Property<T> {
 
     @Override
     public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
         if (!(o instanceof Property<?>)) {
             return false;
         }
         Property<?> p2 = (Property<?>) o;
-        return name.equals(p2.name) && Objects.deepEquals(value, p2.value);
+
+        // Quick name check
+        if (!name.equals(p2.name)) {
+            return false;
+        }
+
+        Object v1 = value;
+        Object v2 = p2.value;
+
+        // Fast identity/null checks
+        if (v1 == v2) {
+            return true;
+        }
+        if (v1 == null || v2 == null) {
+            return false;
+        }
+
+        Class<?> c1 = v1.getClass();
+        Class<?> c2 = v2.getClass();
+
+        // If both are arrays, handle arrays efficiently (including primitive arrays).
+        if (c1.isArray() && c2.isArray()) {
+            Class<?> comp1 = c1.getComponentType();
+            Class<?> comp2 = c2.getComponentType();
+
+            // If component types differ and one is primitive, they can't be equal.
+            if (comp1.isPrimitive() || comp2.isPrimitive()) {
+                if (comp1 != comp2) {
+                    return false;
+                }
+                // Both are arrays of the same primitive type — use the appropriate Arrays.equals
+                if (comp1 == int.class) {
+                    return java.util.Arrays.equals((int[]) v1, (int[]) v2);
+                } else if (comp1 == long.class) {
+                    return java.util.Arrays.equals((long[]) v1, (long[]) v2);
+                } else if (comp1 == short.class) {
+                    return java.util.Arrays.equals((short[]) v1, (short[]) v2);
+                } else if (comp1 == char.class) {
+                    return java.util.Arrays.equals((char[]) v1, (char[]) v2);
+                } else if (comp1 == byte.class) {
+                    return java.util.Arrays.equals((byte[]) v1, (byte[]) v2);
+                } else if (comp1 == boolean.class) {
+                    return java.util.Arrays.equals((boolean[]) v1, (boolean[]) v2);
+                } else if (comp1 == float.class) {
+                    return java.util.Arrays.equals((float[]) v1, (float[]) v2);
+                } else if (comp1 == double.class) {
+                    return java.util.Arrays.equals((double[]) v1, (double[]) v2);
+                } else {
+                    // Fallback: should not be reachable, but maintain safety by delegating to Objects.deepEquals
+                    return Objects.deepEquals(v1, v2);
+                }
+            } else {
+                // Both are object (possibly multi-dimensional) arrays — use deepEquals
+                return java.util.Arrays.deepEquals((Object[]) v1, (Object[]) v2);
+            }
+        }
+
+        // Non-array fallback
+        return Objects.equals(v1, v2);
     }
 
     @Override
